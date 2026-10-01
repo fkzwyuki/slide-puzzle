@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>すらいど ぱずる</title>
+<meta name="theme-color" content="#fff4d6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ぱずる">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<script>
+  // manifest は http(s) で開いたときだけ読ませる（file:// だと読み込みがエラーになるため。file:// でもゲームは普通に動く）
+  if (/^https?:$/.test(location.protocol)) {
+    var mf = document.createElement('link');
+    mf.rel = 'manifest';
+    mf.href = 'manifest.webmanifest';
+    document.head.appendChild(mf);
+  }
+</script>
+<link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+<div id="app">
+  <!-- トップ画面 -->
+  <section id="screen-top" class="screen">
+    <header class="top-head">
+      <h1 class="title">すらいど ぱずる</h1>
+      <div class="toggles">
+        <button id="btn-adult" class="toggle gear" type="button" aria-label="え の せってい（ながおし）">⚙</button>
+        <button id="btn-bgm" class="toggle" type="button" aria-label="おんがく">🎵</button>
+        <button id="btn-se" class="toggle" type="button" aria-label="こうかおん">🔊</button>
+      </div>
+    </header>
+    <div class="top-side">
+      <p class="label">ますの かず</p>
+      <div id="sizes" class="sizes"></div>
+    </div>
+    <div id="pics-area" class="pics-area"><div id="pics" class="pics"></div></div>
+    <div class="top-foot">
+      <button id="btn-more" class="big-btn" type="button">🔄 ほかの え</button>
+    </div>
+    <div id="toast" class="toast" hidden></div>
+  </section>
+
+  <!-- え の せってい画面（おとな用。DESIGN.md §11.3） -->
+  <section id="screen-settings" class="screen" hidden>
+    <header class="s-head">
+      <button id="s-back" class="s-back" type="button">← もどる</button>
+      <h2 class="s-title">え の せってい</h2>
+    </header>
+    <div id="s-body" class="s-body">
+      <p id="s-unavail" class="s-warn" hidden>この環境では絵を追加できません（はじめからの絵で遊べます）</p>
+      <div class="s-actions">
+        <button id="s-add" class="big-btn" type="button">＋ 画像を追加</button>
+        <input id="s-file" class="s-file" type="file" accept="image/*" multiple>
+      </div>
+      <p id="s-progress" class="s-progress" hidden></p>
+      <label class="s-check"><input id="s-builtin" type="checkbox"> はじめからの絵も使う</label>
+      <p id="s-count" class="s-count">じぶんの え（0枚）</p>
+      <div id="s-grid" class="s-grid"></div>
+      <div class="s-foot">
+        <button id="s-clear" class="s-danger" type="button">すべて削除</button>
+        <p class="s-note">※ブラウザのデータを消すと、ここの絵も消えます</p>
+      </div>
+    </div>
+    <!-- 位置の調整（DESIGN.md §11.5）。設定画面の上に重ねる -->
+    <div id="s-crop" class="crop" hidden>
+      <div class="c-modes">
+        <button id="c-m-crop" class="c-mode on" type="button" aria-pressed="true">切り抜く</button>
+        <button id="c-m-whole" class="c-mode" type="button" aria-pressed="false">全体を入れる</button>
+      </div>
+      <p id="c-hint" class="c-hint"></p>
+      <div id="c-area" class="c-area">
+        <div id="c-stage" class="c-stage">
+          <img id="c-img" class="c-img" alt="" draggable="false">
+          <div id="c-frame" class="c-frame"></div>
+        </div>
+        <p id="c-wait" class="c-wait" hidden>つくっています…</p>
+      </div>
+      <div class="c-btns">
+        <button id="c-ok" class="big-btn orange" type="button">決定</button>
+        <button id="c-del" class="s-danger" type="button">削除</button>
+        <button id="c-cancel" class="big-btn" type="button">やめる</button>
+      </div>
+    </div>
+    <div id="s-confirm" class="confirm" hidden>
+      <div class="confirm-box">
+        <p id="s-confirm-text" class="confirm-text s-confirm-text"></p>
+        <div class="r-btns">
+          <button id="s-confirm-ok" class="big-btn orange" type="button">削除</button>
+          <button id="s-confirm-cancel" class="big-btn" type="button">やめる</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- パズル画面 -->
+  <section id="screen-game" class="screen" hidden>
+    <div class="g-head">
+      <button id="btn-home" class="home-btn" type="button" aria-label="もどる">🏠</button>
+      <div class="stats"><span id="g-moves">てかず 0</span><span id="g-time">⏱ 0:00</span></div>
+    </div>
+    <div class="g-area">
+      <div id="board" class="board"></div>
+    </div>
+    <div id="g-ctrl" class="g-ctrl">
+      <button id="btn-hint" class="ctrl-btn" type="button"><span class="ci">👀</span><span>おてほん</span></button>
+      <button id="btn-tip" class="ctrl-btn" type="button" aria-pressed="false"><span class="ci">💡</span><span>ひんと</span></button>
+      <button id="btn-num" class="ctrl-btn" type="button" aria-pressed="false"><span class="ci">🔢</span><span>すうじ</span></button>
+      <button id="btn-shuffle" class="ctrl-btn" type="button"><span class="ci">🔀</span><span>まぜなおす</span></button>
+    </div>
+    <div id="g-result" class="g-result" hidden>
+      <p class="r-title">できた！</p>
+      <p id="r-moves" class="r-line"></p>
+      <p id="r-time" class="r-line"></p>
+      <p id="r-record" class="r-record" hidden>⭐ さいこう きろく！ ⭐</p>
+      <p id="r-tip" class="r-tip" hidden>💡 ひんと つかったよ</p>
+      <div class="r-btns">
+        <button id="r-again" class="big-btn" type="button">もういちど</button>
+        <button id="r-more" class="big-btn orange" type="button">ほかの え</button>
+      </div>
+    </div>
+    <div id="hint" class="hint"></div>
+    <div id="confetti" class="confetti"></div>
+    <div id="confirm" class="confirm" hidden>
+      <div class="confirm-box">
+        <p id="confirm-text" class="confirm-text"></p>
+        <div class="r-btns">
+          <button id="confirm-ok" class="big-btn orange" type="button"></button>
+          <button id="confirm-cancel" class="big-btn" type="button">つづける</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="build/assets.js"></script>
+<script src="src/config.js"></script>
+<script src="src/storage.js"></script>
+<script src="src/mydb.js"></script>
+<script src="src/myimage.js"></script>
+<script src="src/puzzle.js"></script>
+<script src="src/solver.js"></script>
+<script src="src/sound.js"></script>
+<script src="src/wakelock.js"></script>
+<script src="src/game.js"></script>
+<script src="src/top.js"></script>
+<script src="src/settings.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
